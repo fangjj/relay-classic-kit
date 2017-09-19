@@ -12,22 +12,15 @@
 
 import Relay from 'react-relay';
 
-export default class AddTodoMutation extends Relay.Mutation {
-  static fragments = {
-    viewer: () => Relay.QL`
-      fragment on User {
-        id,
-        totalCount,
-      }
-    `,
-  };
+export default class AddTodoMutation2 extends Relay.Mutation {
+
   getMutation () {
-    return Relay.QL`mutation{addTodo}`;
+    return Relay.QL`mutation{addTodo2}`;
   }
+
   getFatQuery () {
     return Relay.QL`
-      fragment on AddTodoPayload @relay(pattern: true) {
-        todoEdge,
+      fragment on AddTodo2Payload @relay(pattern: true) {
         viewer {
           todos,
           totalCount,
@@ -37,39 +30,17 @@ export default class AddTodoMutation extends Relay.Mutation {
   }
   getConfigs () {
     return [{
-      type: 'RANGE_ADD',
-      parentName: 'viewer',
-      parentID: this.props.viewer.id,
-      connectionName: 'todos',
-      edgeName: 'todoEdge',
-      rangeBehaviors: ({status}) => {
-        if (status === 'completed') {
-          return 'ignore';
-        } else {
-          return 'append';
-        }
+      type: 'FIELDS_CHANGE',
+      fieldIDs: {
+        viewer: this.props.viewer.id,
       },
     }];
   }
+
   getVariables () {
     return {
       title: this.props.title,
     };
   }
-  getOptimisticResponse () {
-    return {
-      // FIXME: totalCount gets updated optimistically, but this edge does not
-      // get added until the server responds
-      todoEdge: {
-        node: {
-          completed: false,
-          title: this.props.title,
-        },
-      },
-      viewer: {
-        id: this.props.viewer.id,
-        totalCount: this.props.viewer.totalCount + 1,
-      },
-    };
-  }
+
 }

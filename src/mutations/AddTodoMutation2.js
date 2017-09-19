@@ -12,65 +12,67 @@
 
 import Relay from 'react-relay';
 
-export default class ChangeTodoStatusMutation extends Relay.Mutation {
+export default class AddTodoMutation extends Relay.Mutation {
+  /*
   static fragments = {
-    todo: () => Relay.QL`
-      fragment on Todo {
-        id,
-      }
-    `,
-    // TODO: Mark completedCount optional
     viewer: () => Relay.QL`
       fragment on User {
         id,
-        completedCount,
+        totalCount,
       }
     `,
   };
+  */
+
   getMutation () {
-    return Relay.QL`mutation{changeTodoStatus}`;
+    return Relay.QL`mutation{addTodo}`;
   }
   getFatQuery () {
     return Relay.QL`
-      fragment on ChangeTodoStatusPayload @relay(pattern: true) {
-        todo {
-          completed,
-        },
+      fragment on AddTodoPayload @relay(pattern: true) {
+        todoEdge,
         viewer {
-          completedCount,
           todos,
+          totalCount,
         },
       }
     `;
   }
   getConfigs () {
     return [{
-      type: 'FIELDS_CHANGE',
-      fieldIDs: {
-        todo: this.props.todo.id,
-        viewer: this.props.viewer.id,
+      type: 'RANGE_ADD',
+      parentName: 'viewer',
+      parentID: this.props.viewer.id,
+      connectionName: 'todos',
+      edgeName: 'todoEdge',
+      rangeBehaviors: ({status}) => {
+        if (status === 'completed') {
+          return 'ignore';
+        } else {
+          return 'append';
+        }
       },
     }];
   }
   getVariables () {
     return {
-      completed: this.props.completed,
-      id: this.props.todo.id,
+      title: this.props.title,
     };
   }
   getOptimisticResponse () {
-    const viewerPayload = {id: this.props.viewer.id};
-    if (this.props.viewer.completedCount != null) {
-      viewerPayload.completedCount = this.props.completed
-        ? this.props.viewer.completedCount + 1
-        : this.props.viewer.completedCount - 1;
-    }
     return {
-      todo: {
-        completed: this.props.completed,
-        id: this.props.todo.id,
+      // FIXME: totalCount gets updated optimistically, but this edge does not
+      // get added until the server responds
+      todoEdge: {
+        node: {
+          completed: false,
+          title: this.props.title,
+        },
       },
-      viewer: viewerPayload,
+      viewer: {
+        id: this.props.viewer.id,
+        totalCount: this.props.viewer.totalCount + 1,
+      },
     };
   }
 }

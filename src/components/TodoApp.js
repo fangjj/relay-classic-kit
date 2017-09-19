@@ -75,12 +75,13 @@ class TodoApp extends React.Component {
   }
 }
 
+// ${AddTodoMutation.getFragment('viewer')},
 export default Relay.createContainer(TodoApp, {
   fragments: {
     viewer: () => Relay.QL`
       fragment on User {
+        id,
         totalCount,
-        ${AddTodoMutation.getFragment('viewer')},
         ${TodoListFooter.getFragment('viewer')},
       }
     `,
